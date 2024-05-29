@@ -1,12 +1,38 @@
 import { JSDOM} from 'jsdom'
-/**
- * Normalizes an URL to its host + path
- * 
- * @param {string} URL - URL as strings
- * @returns {string} normalizedURL = domain + path
- */
-function normalizeURL(url) {
 
+async function crawlPage(baseURL, currentUrl, pages) {
+    try {
+        const url = new URL(currentUrl);
+        const baseDomain = new URL(baseURL).hostname;
+        if (url.hostname !== baseDomain) {
+            return pages;
+        }
+
+        const normalizedUrl = normalizeURL(currentUrl);
+
+        if (pages[normalizedUrl]) {
+            pages[normalizedUrl].count++;
+            return pages;
+        }
+
+        pages[normalizedUrl] = { count: 1 };
+
+        const html = await fetchAndParseHTML(currentUrl);
+        const urls = getURLsfromHTML(html, baseURL);
+
+        for (const url of urls) {
+            await crawlPage(baseURL, url, pages);
+        }
+
+        return pages;
+    } catch (error) {
+        console.error(error);
+        return pages;
+    }
+}
+
+
+function normalizeURL(url) {
     let inputUrl = ''
     const supportedProtocols = ['http:', 'https:']
 
@@ -15,6 +41,7 @@ function normalizeURL(url) {
     } catch (err) {
         throw new TypeError(err.message)
     }
+    
     if (supportedProtocols.includes(inputUrl.protocol)) {
         if (inputUrl.pathname.endsWith('/')) {
             return inputUrl.host.concat('', inputUrl.pathname.slice(0,-1))
@@ -27,13 +54,22 @@ function normalizeURL(url) {
 }
 
 
-/**
- * Returns a list of all URLs within an html body
- * 
- * @param {string} htmlBody - Content of html body
- * @param {string} baseURL - Base URL of website
- * @returns {string} normalizedURL = domain + path
- */
+async function fetchAndParseHTML(url) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error("Network response was not OK");
+        }
+
+        const html = await response.text();
+        return html;
+    } catch (error) {
+        console.error(error);
+        return '';
+    }
+}
+
+
 function getURLsfromHTML(htmlBody, baseURL) {
     const dom = new JSDOM(htmlBody)
     const anchors = dom.window.document.querySelectorAll('a')
@@ -54,4 +90,4 @@ function getURLsfromHTML(htmlBody, baseURL) {
 }
 
 
-export { normalizeURL, getURLsfromHTML }
+export { normalizeURL, getURLsfromHTML, crawlPage }
