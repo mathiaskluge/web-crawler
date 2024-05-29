@@ -2,32 +2,32 @@ import { JSDOM} from 'jsdom'
 
 async function crawlPage(baseURL, currentUrl, pages) {
     try {
-        const url = new URL(currentUrl);
-        const baseDomain = new URL(baseURL).hostname;
+        const url = new URL(currentUrl)
+        const baseDomain = new URL(baseURL).hostname
         if (url.hostname !== baseDomain) {
-            return pages;
+            return pages
         }
 
-        const normalizedUrl = normalizeURL(currentUrl);
+        const normalizedUrl = normalizeURL(currentUrl)
 
         if (pages[normalizedUrl]) {
-            pages[normalizedUrl].count++;
-            return pages;
+            pages[normalizedUrl].count++
+            return pages
         }
 
-        pages[normalizedUrl] = { count: 1 };
+        pages[normalizedUrl] = { count: 1 }
 
-        const html = await fetchAndParseHTML(currentUrl);
-        const urls = getURLsfromHTML(html, baseURL);
+        const html = await fetchAndParseHTML(currentUrl)
+        const urls = getURLsfromHTML(html, baseURL)
 
         for (const url of urls) {
-            await crawlPage(baseURL, url, pages);
+            await crawlPage(baseURL, url, pages)
         }
 
-        return pages;
+        return pages
     } catch (error) {
-        console.error(error);
-        return pages;
+        console.error(error)
+        return pages
     }
 }
 
@@ -56,16 +56,16 @@ function normalizeURL(url) {
 
 async function fetchAndParseHTML(url) {
     try {
-        const response = await fetch(url);
+        const response = await fetch(url)
         if (!response.ok) {
-            throw new Error("Network response was not OK");
+            throw new Error("Network response was not OK")
         }
 
-        const html = await response.text();
-        return html;
+        const html = await response.text()
+        return html
     } catch (error) {
-        console.error(error);
-        return '';
+        console.error(error)
+        return ''
     }
 }
 
